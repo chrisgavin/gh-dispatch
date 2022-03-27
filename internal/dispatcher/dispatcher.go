@@ -5,16 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cli/go-gh"
-	"github.com/cli/go-gh/pkg/api"
+	"github.com/chrisgavin/gh-dispatch/internal/client"
 	"github.com/cli/go-gh/pkg/repository"
 	"github.com/pkg/errors"
 )
 
 func DispatchWorkflow(repository repository.Repository, reference string, workflowName string, inputs map[string]interface{}) error {
-	client, err := gh.RESTClient(&api.ClientOptions{Host: repository.Host()})
+	client, err := client.NewClient(repository.Host())
 	if err != nil {
-		return errors.Wrap(err, "Unable to create GitHub client.")
+		return err
 	}
 
 	body := map[string]interface{}{
