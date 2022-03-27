@@ -81,11 +81,19 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "Unable to open git repository.")
 		}
+		repositoryConfiguration, err := gitRepository.Config()
+		if err != nil {
+			return errors.Wrap(err, "Unable to get git repository configuration.")
+		}
 		head, err := gitRepository.Head()
 		if err != nil {
 			return errors.Wrap(err, "Unable to get repository HEAD.")
 		}
-		reference := head.Name().String()
+		remoteConfiguration, ok := repositoryConfiguration.Branches[head.Name().Short()]
+		if !ok {
+			return errors.Wrap(err, "Unable to get remote configuration for the current branch. Has it been pushed to GitHub?")
+		}
+		reference := remoteConfiguration.Merge.String()
 
 		log.Info("Dispatching workflow...")
 		err = dispatcher.DispatchWorkflow(currentRepository, reference, workflowName, inputAnswers)
