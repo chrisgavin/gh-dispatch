@@ -26,7 +26,7 @@ func DispatchWorkflow(repository repository.Repository, reference string, workfl
 		return errors.Wrap(err, "Unable to marshal workflow dispatch body.")
 	}
 
-	err = client.Post(fmt.Sprintf("repos/%s/%s/actions/workflows/%s/dispatches", repository.Name(), repository.Owner(), workflowName), bytes.NewReader(encodedBody), nil)
+	err = client.Post(fmt.Sprintf("repos/%s/%s/actions/workflows/%s/dispatches", repository.Owner(), repository.Name(), workflowName), bytes.NewReader(encodedBody), nil)
 	if err != nil {
 		return errors.Wrap(err, "Unable to dispatch workflow.")
 	}
