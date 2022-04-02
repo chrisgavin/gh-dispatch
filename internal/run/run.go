@@ -12,6 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type User struct {
+	Login string `json:"login"`
+}
+
 type WorkflowRun struct {
 	ID         int64  `json:"id"`
 	Conclusion string `json:"conclusion"`
@@ -22,8 +26,13 @@ type WorkflowRuns struct {
 }
 
 func findRun(client api.RESTClient, repository repository.Repository, reference string, after time.Time, before time.Time) (*WorkflowRun, error) {
+	user := User{}
+	if err := client.Get("user", &user); err != nil {
+		return nil, errors.Wrap(err, "Unable to get the current user.")
+	}
+
 	urlParameters := url.Values{}
-	//urlParameters.Add("actor", "TODO")
+	urlParameters.Add("actor", user.Login)
 	urlParameters.Add("branch", strings.TrimPrefix(reference, "refs/heads/"))
 	urlParameters.Add("event", "workflow_dispatch")
 	createdRange := fmt.Sprintf("%s..%s", after.Format(time.RFC3339), before.Format(time.RFC3339))
