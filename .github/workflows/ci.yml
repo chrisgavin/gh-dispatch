@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab
         with:
           go-version: 1.17.1
       - name: Build
@@ -30,9 +30,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab
         with:
           go-version: 1.17.1
       - name: Test
@@ -43,9 +43,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab
         with:
           go-version: 1.17.1
       - name: Check Modules
@@ -56,6 +56,6 @@ jobs:
             exit 1
           fi
       - name: Lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
         with:
           version: v1.29
