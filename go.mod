@@ -3,7 +3,7 @@ module github.com/chrisgavin/gh-dispatch
 go 1.17
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.2
+	github.com/AlecAivazis/survey/v2 v2.3.4
 	github.com/cli/go-gh v0.0.3
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/pkg/errors v0.9.1
