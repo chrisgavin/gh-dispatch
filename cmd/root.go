@@ -30,6 +30,7 @@ var rootFlags = rootFlagFields{}
 var SilentErr = errors.New("SilentErr")
 
 var rootCmd = &cobra.Command{
+	Use:           "gh dispatch <workflow>",
 	Short:         "A GitHub CLI extension that makes it easy to dispatch GitHub Actions workflows.",
 	Version:       fmt.Sprintf("%s (%s)", version.Version(), version.Commit()),
 	SilenceErrors: true,
@@ -43,18 +44,27 @@ var rootCmd = &cobra.Command{
 			log.Error("No dispatchable workflows found in repository.")
 			return SilentErr
 		}
-		workflowNames := []string{}
-		for workflowName := range workflows {
-			workflowNames = append(workflowNames, workflowName)
-		}
-		workflowQuestion := &survey.Select{
-			Message: "What workflow do you want to dispatch?",
-			Options: workflowNames,
-		}
 
 		var workflowName string
-		if err := survey.AskOne(workflowQuestion, &workflowName); err != nil {
-			return errors.Wrap(err, "Unable to ask for workflow.")
+		if len(args) == 0 {
+			workflowNames := []string{}
+			for workflowName := range workflows {
+				workflowNames = append(workflowNames, workflowName)
+			}
+			workflowQuestion := &survey.Select{
+				Message: "What workflow do you want to dispatch?",
+				Options: workflowNames,
+			}
+
+			var workflowName string
+			if err := survey.AskOne(workflowQuestion, &workflowName); err != nil {
+				return errors.Wrap(err, "Unable to ask for workflow.")
+			}
+		} else if len(args) == 1 {
+			workflowPathParts := strings.Split(args[0], "/")
+			workflowName = workflowPathParts[len(workflowPathParts)-1]
+		} else {
+			return errors.New("Too many arguments.")
 		}
 
 		workflow := workflows[workflowName]
