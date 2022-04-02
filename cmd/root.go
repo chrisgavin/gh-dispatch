@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/chrisgavin/gh-dispatch/internal/dispatcher"
+	"github.com/chrisgavin/gh-dispatch/internal/local_repository"
 	"github.com/chrisgavin/gh-dispatch/internal/locator"
 	"github.com/chrisgavin/gh-dispatch/internal/run"
 	"github.com/chrisgavin/gh-dispatch/internal/version"
@@ -81,29 +83,39 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "Unable to open git repository.")
 		}
-		repositoryConfiguration, err := gitRepository.Config()
+		remoteReference, remoteReferenceWarnings, err := local_repository.GetCurrentRemoteHead(cmd.Context(), gitRepository)
 		if err != nil {
-			return errors.Wrap(err, "Unable to get git repository configuration.")
+			return err
 		}
-		head, err := gitRepository.Head()
-		if err != nil {
-			return errors.Wrap(err, "Unable to get repository HEAD.")
+		if len(remoteReferenceWarnings) > 0 {
+			antepenultimateIndex := len(remoteReferenceWarnings) - 2
+			if antepenultimateIndex < 0 {
+				antepenultimateIndex = 0
+			}
+			remoteReferenceWarningsString := strings.Join(append(remoteReferenceWarnings[:antepenultimateIndex], strings.Join(remoteReferenceWarnings[antepenultimateIndex:], " and ")), ", ")
+			remoteReferenceWarningQuestion := &survey.Confirm{
+				Message: fmt.Sprintf("You currently have %s. Would you still like to dispatch the workflow?", remoteReferenceWarningsString),
+			}
+
+			var remoteReferenceWarningAnswer bool
+			if err := survey.AskOne(remoteReferenceWarningQuestion, &remoteReferenceWarningAnswer); err != nil {
+				return errors.Wrap(err, "Unable to ask whether to continue despite warnings about the remote head.")
+			}
+			if !remoteReferenceWarningAnswer {
+				log.Error("Aborting.")
+				os.Exit(1)
+			}
 		}
-		remoteConfiguration, ok := repositoryConfiguration.Branches[head.Name().Short()]
-		if !ok {
-			return errors.Wrap(err, "Unable to get remote configuration for the current branch. Has it been pushed to GitHub?")
-		}
-		reference := remoteConfiguration.Merge.String()
 
 		log.Info("Dispatching workflow...")
-		err = dispatcher.DispatchWorkflow(currentRepository, reference, workflowName, inputAnswers)
+		err = dispatcher.DispatchWorkflow(currentRepository, remoteReference, workflowName, inputAnswers)
 		if err != nil {
 			return err
 		}
 
 		if !rootFlags.noWatch {
 			log.Info("Waiting for workflow to start...")
-			workflowRun, err := run.LocateRun(currentRepository, reference)
+			workflowRun, err := run.LocateRun(currentRepository, remoteReference)
 			if err != nil {
 				return err
 			}
