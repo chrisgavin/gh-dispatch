@@ -87,7 +87,6 @@ var rootCmd = &cobra.Command{
 				Options: workflowNames,
 			}
 
-			var workflowName string
 			if err := survey.AskOne(workflowQuestion, &workflowName); err != nil {
 				return errors.Wrap(err, "Unable to ask for workflow.")
 			}
