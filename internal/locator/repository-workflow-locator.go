@@ -9,6 +9,7 @@ import (
 
 	"github.com/chrisgavin/gh-dispatch/internal/workflow"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func ListWorkflowsInRepository() (map[string]workflow.Workflow, error) {
@@ -43,7 +44,8 @@ func ListWorkflowsInRepository() (map[string]workflow.Workflow, error) {
 		}
 		loaded, err := workflow.ReadWorkflow(entry.Name(), bytes)
 		if err != nil {
-			return nil, errors.Wrap(err, "Unable to read workflow.")
+			log.Warnf("Workflow \"%s\" is invalid: %s", entry.Name(), err)
+			continue
 		}
 		if !loaded.Dispatchable {
 			continue
