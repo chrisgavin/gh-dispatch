@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"sort"
+
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -75,5 +77,8 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 			return nil, errors.Errorf("Unable to parse workflow \"on\" clause. Unexpected type %T.", on)
 		}
 	}
+	sort.SliceStable(workflow.Inputs, func(i int, j int) bool {
+		return workflow.Inputs[i].Name < workflow.Inputs[j].Name
+	})
 	return &workflow, nil
 }
