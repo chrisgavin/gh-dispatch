@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -82,6 +83,7 @@ var rootCmd = &cobra.Command{
 			for workflowName := range workflows {
 				workflowNames = append(workflowNames, workflowName)
 			}
+			sort.Strings(workflowNames)
 			workflowQuestion := &survey.Select{
 				Message: "What workflow do you want to dispatch?",
 				Options: workflowNames,
