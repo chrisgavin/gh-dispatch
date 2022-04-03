@@ -22,7 +22,10 @@ import (
 )
 
 type rootFlagFields struct {
-	noWatch bool
+	noWatch          bool
+	inputs           []string
+	noPromptInputs   bool
+	noPromptUnpushed bool
 }
 
 var rootFlags = rootFlagFields{}
@@ -36,6 +39,34 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		gitRepository, err := git.PlainOpen(".")
+		if err != nil {
+			return errors.Wrap(err, "Unable to open git repository.")
+		}
+		remoteReference, remoteReferenceWarnings, err := local_repository.GetCurrentRemoteHead(cmd.Context(), gitRepository)
+		if err != nil {
+			return err
+		}
+		if len(remoteReferenceWarnings) > 0 && !rootFlags.noPromptUnpushed {
+			antepenultimateIndex := len(remoteReferenceWarnings) - 2
+			if antepenultimateIndex < 0 {
+				antepenultimateIndex = 0
+			}
+			remoteReferenceWarningsString := strings.Join(append(remoteReferenceWarnings[:antepenultimateIndex], strings.Join(remoteReferenceWarnings[antepenultimateIndex:], " and ")), ", ")
+			remoteReferenceWarningQuestion := &survey.Confirm{
+				Message: fmt.Sprintf("You currently have %s. Would you still like to dispatch a workflow?", remoteReferenceWarningsString),
+			}
+
+			var remoteReferenceWarningAnswer bool
+			if err := survey.AskOne(remoteReferenceWarningQuestion, &remoteReferenceWarningAnswer); err != nil {
+				return errors.Wrap(err, "Unable to ask whether to continue despite warnings about the remote head.")
+			}
+			if !remoteReferenceWarningAnswer {
+				log.Error("Aborting.")
+				os.Exit(1)
+			}
+		}
+
 		workflows, err := locator.ListWorkflowsInRepository()
 		if err != nil {
 			return errors.Wrap(err, "Failed to list workflows in repository.")
@@ -69,17 +100,38 @@ var rootCmd = &cobra.Command{
 
 		workflow := workflows[workflowName]
 
-		inputQuestions := []*survey.Question{}
-		for _, input := range workflow.Inputs {
-			inputQuestions = append(inputQuestions, &survey.Question{
-				Name: input.Name,
-				Prompt: &survey.Input{
-					Message: fmt.Sprintf("Input for %s:", input.Name),
-					Help:    input.Description,
-				},
-			})
+		inputArguments := map[string]string{}
+		for _, input := range rootFlags.inputs {
+			inputParts := strings.SplitN(input, "=", 2)
+			key := inputParts[0]
+			value := inputParts[1]
+			inputFound := false
+			for _, input := range workflow.Inputs {
+				if input.Name == key {
+					inputFound = true
+				}
+			}
+			if !inputFound {
+				return errors.Errorf("Input %s not accepted by workflow.", key)
+			}
+			inputArguments[key] = value
 		}
+
+		inputQuestions := []*survey.Question{}
 		inputAnswers := map[string]interface{}{}
+		for _, input := range workflow.Inputs {
+			if inputValue, ok := inputArguments[input.Name]; ok {
+				inputAnswers[input.Name] = inputValue
+			} else if !rootFlags.noPromptInputs {
+				inputQuestions = append(inputQuestions, &survey.Question{
+					Name: input.Name,
+					Prompt: &survey.Input{
+						Message: fmt.Sprintf("Input for %s:", input.Name),
+						Help:    input.Description,
+					},
+				})
+			}
+		}
 		if err := survey.Ask(inputQuestions, &inputAnswers); err != nil {
 			return errors.Wrap(err, "Unable to ask for inputs.")
 		}
@@ -87,34 +139,6 @@ var rootCmd = &cobra.Command{
 		currentRepository, err := gh.CurrentRepository()
 		if err != nil {
 			return errors.Wrap(err, "Unable to determine current repository. Has it got a remote on GitHub?")
-		}
-
-		gitRepository, err := git.PlainOpen(".")
-		if err != nil {
-			return errors.Wrap(err, "Unable to open git repository.")
-		}
-		remoteReference, remoteReferenceWarnings, err := local_repository.GetCurrentRemoteHead(cmd.Context(), gitRepository)
-		if err != nil {
-			return err
-		}
-		if len(remoteReferenceWarnings) > 0 {
-			antepenultimateIndex := len(remoteReferenceWarnings) - 2
-			if antepenultimateIndex < 0 {
-				antepenultimateIndex = 0
-			}
-			remoteReferenceWarningsString := strings.Join(append(remoteReferenceWarnings[:antepenultimateIndex], strings.Join(remoteReferenceWarnings[antepenultimateIndex:], " and ")), ", ")
-			remoteReferenceWarningQuestion := &survey.Confirm{
-				Message: fmt.Sprintf("You currently have %s. Would you still like to dispatch the workflow?", remoteReferenceWarningsString),
-			}
-
-			var remoteReferenceWarningAnswer bool
-			if err := survey.AskOne(remoteReferenceWarningQuestion, &remoteReferenceWarningAnswer); err != nil {
-				return errors.Wrap(err, "Unable to ask whether to continue despite warnings about the remote head.")
-			}
-			if !remoteReferenceWarningAnswer {
-				log.Error("Aborting.")
-				os.Exit(1)
-			}
 		}
 
 		log.Info("Dispatching workflow...")
@@ -165,6 +189,9 @@ func (f *rootFlagFields) Init(cmd *cobra.Command) error {
 
 func Execute(ctx context.Context) error {
 	rootCmd.Flags().BoolVar(&rootFlags.noWatch, "no-watch", false, "Do not wait for the workflow to complete.")
+	rootCmd.Flags().StringSliceVar(&rootFlags.inputs, "input", nil, "Inputs to pass to the workflow, as `key=value`.")
+	rootCmd.Flags().BoolVar(&rootFlags.noPromptInputs, "no-prompt-inputs", false, "Do not prompt for any inputs to the workflow.")
+	rootCmd.Flags().BoolVar(&rootFlags.noPromptUnpushed, "no-prompt-unpushed", false, "Do not warn about any uncommitted or unpushed changes.")
 
 	err := rootFlags.Init(rootCmd)
 	if err != nil {
