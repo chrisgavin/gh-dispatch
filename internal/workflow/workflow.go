@@ -1,8 +1,6 @@
 package workflow
 
 import (
-	"sort"
-
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
@@ -19,6 +17,18 @@ type Workflow struct {
 }
 
 const workflowDispatch = "workflow_dispatch"
+
+type workflowDispatchTrigger struct {
+	Inputs *yaml.MapSlice `yaml:"inputs"`
+}
+
+type workflowTriggers struct {
+	WorkflowDispatch *workflowDispatchTrigger `yaml:"workflow_dispatch"`
+}
+
+type workflowInternal struct {
+	On workflowTriggers `yaml:"on"`
+}
 
 func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 	workflow := Workflow{
@@ -40,36 +50,36 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 				}
 			}
 		case map[interface{}]interface{}:
-			for event, eventConfiguration := range typedOn {
-				if event == workflowDispatch {
-					workflow.Dispatchable = true
-					if eventConfiguration != nil {
-						typedEventConfiguration, ok := eventConfiguration.(map[interface{}]interface{})
+			// We want to preserve the order of inputs, so in this case we re-parse the workflow using the internal types specifically meant for preserving order.
+			typedParsedWorkflow := workflowInternal{}
+			err = yaml.Unmarshal(rawWorkflow, &typedParsedWorkflow)
+			if err != nil {
+				return nil, errors.Wrap(err, "Unable to parse workflow as typed YAML.")
+			}
+			if typedParsedWorkflow.On.WorkflowDispatch != nil {
+				workflow.Dispatchable = true
+				if typedParsedWorkflow.On.WorkflowDispatch.Inputs != nil {
+					for _, inputData := range *typedParsedWorkflow.On.WorkflowDispatch.Inputs {
+						inputName := inputData.Key
+						inputConfiguration := inputData.Value
+						typedInputConfiguration, ok := inputConfiguration.(yaml.MapSlice)
 						if !ok {
-							return nil, errors.Errorf("Workflow dispatch configuration had unexpected type %T.", eventConfiguration)
+							return nil, errors.Errorf("Input configuration for %s had unexpected type %T.", inputName, inputConfiguration)
 						}
-						if inputs, ok := typedEventConfiguration["inputs"]; ok {
-							typedInputs, ok := inputs.(map[interface{}]interface{})
+						mapInputConfiguration := map[interface{}]interface{}{}
+						for _, inputConfigurationData := range typedInputConfiguration {
+							mapInputConfiguration[inputConfigurationData.Key] = inputConfigurationData.Value
+						}
+						input := Input{
+							Name: inputName.(string),
+						}
+						if inputDescription, ok := mapInputConfiguration["description"]; ok {
+							input.Description, ok = inputDescription.(string)
 							if !ok {
-								return nil, errors.Errorf("Workflow dispatch configuration inputs had unexpected type %T.", inputs)
-							}
-							for inputName, inputConfiguration := range typedInputs {
-								typedInputConfiguration, ok := inputConfiguration.(map[interface{}]interface{})
-								if !ok {
-									return nil, errors.Errorf("Input configuration for %s had unexpected type %T.", inputName, inputConfiguration)
-								}
-								input := Input{
-									Name: inputName.(string),
-								}
-								if inputDescription, ok := typedInputConfiguration["description"]; ok {
-									input.Description, ok = inputDescription.(string)
-									if !ok {
-										return nil, errors.Errorf("Input description for %s had unexpected type %T.", inputName, inputDescription)
-									}
-								}
-								workflow.Inputs = append(workflow.Inputs, input)
+								return nil, errors.Errorf("Input description for %s had unexpected type %T.", inputName, inputDescription)
 							}
 						}
+						workflow.Inputs = append(workflow.Inputs, input)
 					}
 				}
 			}
@@ -77,8 +87,5 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 			return nil, errors.Errorf("Unable to parse workflow \"on\" clause. Unexpected type %T.", on)
 		}
 	}
-	sort.SliceStable(workflow.Inputs, func(i int, j int) bool {
-		return workflow.Inputs[i].Name < workflow.Inputs[j].Name
-	})
 	return &workflow, nil
 }
