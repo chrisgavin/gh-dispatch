@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DispatchWorkflow(repository repository.Repository, reference string, workflowName string, inputs map[string]interface{}) error {
+func DispatchWorkflow(repository repository.Repository, reference string, workflowName string, inputs map[string]string) error {
 	client, err := client.NewClient(repository.Host())
 	if err != nil {
 		return err

@@ -11,10 +11,12 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/chrisgavin/gh-dispatch/internal/dispatcher"
+	"github.com/chrisgavin/gh-dispatch/internal/environment"
 	"github.com/chrisgavin/gh-dispatch/internal/local_repository"
 	"github.com/chrisgavin/gh-dispatch/internal/locator"
 	"github.com/chrisgavin/gh-dispatch/internal/run"
 	"github.com/chrisgavin/gh-dispatch/internal/version"
+	"github.com/chrisgavin/gh-dispatch/internal/workflow"
 	"github.com/cli/go-gh"
 	"github.com/go-git/go-git/v5"
 	"github.com/pkg/errors"
@@ -44,6 +46,11 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "Unable to open git repository.")
 		}
+		currentRepository, err := gh.CurrentRepository()
+		if err != nil {
+			return errors.Wrap(err, "Unable to determine current repository. Has it got a remote on GitHub?")
+		}
+
 		remoteReference, remoteReferenceWarnings, err := local_repository.GetCurrentRemoteHead(cmd.Context(), gitRepository)
 		if err != nil {
 			return err
@@ -99,7 +106,7 @@ var rootCmd = &cobra.Command{
 			return errors.New("Too many arguments.")
 		}
 
-		workflow := workflows[workflowName]
+		workflowData := workflows[workflowName]
 
 		inputArguments := map[string]string{}
 		for _, input := range rootFlags.inputs {
@@ -107,7 +114,7 @@ var rootCmd = &cobra.Command{
 			key := inputParts[0]
 			value := inputParts[1]
 			inputFound := false
-			for _, input := range workflow.Inputs {
+			for _, input := range workflowData.Inputs {
 				if input.Name == key {
 					inputFound = true
 				}
@@ -118,32 +125,71 @@ var rootCmd = &cobra.Command{
 			inputArguments[key] = value
 		}
 
+		var environmentCache []string
 		inputQuestions := []*survey.Question{}
 		inputAnswers := map[string]interface{}{}
-		for _, input := range workflow.Inputs {
+		for _, input := range workflowData.Inputs {
 			if inputValue, ok := inputArguments[input.Name]; ok {
 				inputAnswers[input.Name] = inputValue
 			} else if !rootFlags.noPromptInputs {
-				inputQuestions = append(inputQuestions, &survey.Question{
+				question := survey.Question{
 					Name: input.Name,
-					Prompt: &survey.Input{
-						Message: fmt.Sprintf("Input for %s:", input.Name),
+				}
+				message := fmt.Sprintf("Input for %s:", input.Name)
+				if input.Type == workflow.StringInput {
+					question.Prompt = &survey.Input{
+						Message: message,
 						Help:    input.Description,
-					},
-				})
+					}
+				} else if input.Type == workflow.BooleanInput {
+					question.Prompt = &survey.Confirm{
+						Message: message,
+						Help:    input.Description,
+					}
+				} else if input.Type == workflow.ChoiceInput {
+					options := input.OptionProvider()
+					question.Prompt = &survey.Select{
+						Message: message,
+						Help:    input.Description,
+						Options: options,
+					}
+				} else if input.Type == workflow.EnvironmentInput {
+					if environmentCache == nil {
+						environmentCache, err = environment.ListEnvironments(currentRepository)
+						if err != nil {
+							return err
+						}
+					}
+					question.Prompt = &survey.Select{
+						Message: message,
+						Help:    input.Description,
+						Options: environmentCache,
+					}
+				} else {
+					return errors.Errorf("Unhandled input type %s. This is a bug. :(", input.Type)
+				}
+				inputQuestions = append(inputQuestions, &question)
 			}
 		}
 		if err := survey.Ask(inputQuestions, &inputAnswers); err != nil {
 			return errors.Wrap(err, "Unable to ask for inputs.")
 		}
-
-		currentRepository, err := gh.CurrentRepository()
-		if err != nil {
-			return errors.Wrap(err, "Unable to determine current repository. Has it got a remote on GitHub?")
+		workflowInputs := map[string]string{}
+		for key, value := range inputAnswers {
+			switch typedValue := value.(type) {
+			case string:
+				workflowInputs[key] = typedValue
+			case survey.OptionAnswer:
+				workflowInputs[key] = typedValue.Value
+			case bool:
+				workflowInputs[key] = strconv.FormatBool(typedValue)
+			default:
+				return errors.Errorf("Unhandled option answer type %T. This is a bug. :(", value)
+			}
 		}
 
 		log.Info("Dispatching workflow...")
-		err = dispatcher.DispatchWorkflow(currentRepository, remoteReference, workflowName, inputAnswers)
+		err = dispatcher.DispatchWorkflow(currentRepository, remoteReference, workflowName, workflowInputs)
 		if err != nil {
 			return err
 		}

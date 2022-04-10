@@ -1,13 +1,34 @@
 package workflow
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
+type InputType string
+
+const (
+	StringInput      InputType = "string"
+	BooleanInput     InputType = "boolean"
+	ChoiceInput      InputType = "choice"
+	EnvironmentInput InputType = "environment"
+)
+
+var inputTypesMap = map[string]InputType{
+	string(StringInput):      StringInput,
+	string(BooleanInput):     BooleanInput,
+	string(ChoiceInput):      ChoiceInput,
+	string(EnvironmentInput): EnvironmentInput,
+}
+
 type Input struct {
-	Name        string
-	Description string
+	Name           string
+	Description    string
+	Type           InputType
+	OptionProvider func() []string
 }
 
 type Workflow struct {
@@ -77,6 +98,34 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 							input.Description, ok = inputDescription.(string)
 							if !ok {
 								return nil, errors.Errorf("Input description for %s had unexpected type %T.", inputName, inputDescription)
+							}
+						}
+						input.Type = StringInput
+						if inputType, ok := mapInputConfiguration["type"]; ok {
+							typedInputType, ok := inputType.(string)
+							if !ok {
+								return nil, errors.Errorf("Input type for %s had unexpected type %T.", inputName, inputType)
+							}
+							if input.Type, ok = inputTypesMap[typedInputType]; !ok {
+								log.Warnf("Input %s has unknown type %s.", input.Name, inputType)
+							} else {
+								if input.Type == ChoiceInput {
+									if inputOptions, ok := mapInputConfiguration["options"]; ok {
+										if typedInputOptions, ok := inputOptions.([]interface{}); ok {
+											input.OptionProvider = func() []string {
+												choices := []string{}
+												for _, inputOption := range typedInputOptions {
+													choices = append(choices, fmt.Sprintf("%v", inputOption))
+												}
+												return choices
+											}
+										} else {
+											return nil, errors.Errorf("Input options for %s had unexpected type %T.", input.Name, inputOptions)
+										}
+									} else {
+										return nil, errors.Errorf("Input %s is a choice input but has no options property.", input.Name)
+									}
+								}
 							}
 						}
 						workflow.Inputs = append(workflow.Inputs, input)
