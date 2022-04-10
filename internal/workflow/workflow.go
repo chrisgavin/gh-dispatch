@@ -29,6 +29,7 @@ type Input struct {
 	Description    string
 	Type           InputType
 	OptionProvider func() []string
+	Default        string
 }
 
 type Workflow struct {
@@ -126,6 +127,11 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 										return nil, errors.Errorf("Input %s is a choice input but has no options property.", input.Name)
 									}
 								}
+							}
+						}
+						if inputDefault, ok := mapInputConfiguration["default"]; ok {
+							if input.Default, ok = inputDefault.(string); !ok {
+								return nil, errors.Errorf("Input default for %s had unexpected type %T.", input.Name, inputDefault)
 							}
 						}
 						workflow.Inputs = append(workflow.Inputs, input)

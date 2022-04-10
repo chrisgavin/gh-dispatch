@@ -124,3 +124,18 @@ on:
 	require.Equal(t, 1, len(workflowData.Inputs))
 	require.Equal(t, EnvironmentInput, workflowData.Inputs[0].Type)
 }
+
+func TestReadWorkflowWithDefaultValueInputs(t *testing.T) {
+	const workflowContent = `
+on:
+  workflow_dispatch:
+    inputs:
+      some_input:
+        default: foo
+`
+	workflowData, err := ReadWorkflow("test.yml", []byte(workflowContent))
+	require.NoError(t, err)
+	require.True(t, workflowData.Dispatchable)
+	require.Equal(t, 1, len(workflowData.Inputs))
+	require.Equal(t, "foo", workflowData.Inputs[0].Default)
+}

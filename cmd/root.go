@@ -140,11 +140,13 @@ var rootCmd = &cobra.Command{
 					question.Prompt = &survey.Input{
 						Message: message,
 						Help:    input.Description,
+						Default: input.Default,
 					}
 				} else if input.Type == workflow.BooleanInput {
 					question.Prompt = &survey.Confirm{
 						Message: message,
 						Help:    input.Description,
+						Default: input.Default == "true",
 					}
 				} else if input.Type == workflow.ChoiceInput {
 					options := input.OptionProvider()
@@ -152,6 +154,7 @@ var rootCmd = &cobra.Command{
 						Message: message,
 						Help:    input.Description,
 						Options: options,
+						Default: input.Default,
 					}
 				} else if input.Type == workflow.EnvironmentInput {
 					if environmentCache == nil {
@@ -164,6 +167,7 @@ var rootCmd = &cobra.Command{
 						Message: message,
 						Help:    input.Description,
 						Options: environmentCache,
+						Default: input.Default,
 					}
 				} else {
 					return errors.Errorf("Unhandled input type %s. This is a bug. :(", input.Type)
