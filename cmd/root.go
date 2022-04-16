@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/chrisgavin/gh-dispatch/internal/default_ref"
 	"github.com/chrisgavin/gh-dispatch/internal/dispatcher"
 	"github.com/chrisgavin/gh-dispatch/internal/environment"
 	"github.com/chrisgavin/gh-dispatch/internal/local_repository"
@@ -18,6 +19,7 @@ import (
 	"github.com/chrisgavin/gh-dispatch/internal/version"
 	"github.com/chrisgavin/gh-dispatch/internal/workflow"
 	"github.com/cli/go-gh"
+	"github.com/cli/go-gh/pkg/repository"
 	"github.com/go-git/go-git/v5"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -29,6 +31,9 @@ type rootFlagFields struct {
 	inputs           []string
 	noPromptInputs   bool
 	noPromptUnpushed bool
+	hostname         string
+	repository       string
+	ref              string
 }
 
 var rootFlags = rootFlagFields{}
@@ -54,43 +59,80 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		gitRepository, err := git.PlainOpen(".")
-		if err != nil {
-			return errors.Wrap(err, "Unable to open git repository.")
-		}
-		currentRepository, err := gh.CurrentRepository()
-		if err != nil {
-			return errors.Wrap(err, "Unable to determine current repository. Has it got a remote on GitHub?")
-		}
-
-		remoteReference, remoteReferenceWarnings, err := local_repository.GetCurrentRemoteHead(cmd.Context(), gitRepository)
-		if err != nil {
-			return err
-		}
-		if len(remoteReferenceWarnings) > 0 && !rootFlags.noPromptUnpushed {
-			antepenultimateIndex := len(remoteReferenceWarnings) - 2
-			if antepenultimateIndex < 0 {
-				antepenultimateIndex = 0
+		var err error
+		var workflows map[string]workflow.Workflow
+		var currentRepository repository.Repository
+		var reference string
+		if rootFlags.repository == "" {
+			gitRepository, err := git.PlainOpen(".")
+			if err != nil {
+				return errors.Wrap(err, "Unable to open git repository.")
 			}
-			remoteReferenceWarningsString := strings.Join(append(remoteReferenceWarnings[:antepenultimateIndex], strings.Join(remoteReferenceWarnings[antepenultimateIndex:], " and ")), ", ")
-			remoteReferenceWarningQuestion := &survey.Confirm{
-				Message: fmt.Sprintf("You currently have %s. Would you still like to dispatch a workflow?", remoteReferenceWarningsString),
+			currentRepository, err = gh.CurrentRepository()
+			if err != nil {
+				return errors.Wrap(err, "Unable to determine current repository. Has it got a remote on GitHub?")
 			}
 
-			var remoteReferenceWarningAnswer bool
-			if err := survey.AskOne(remoteReferenceWarningQuestion, &remoteReferenceWarningAnswer); err != nil {
-				return errors.Wrap(err, "Unable to ask whether to continue despite warnings about the remote head.")
+			var remoteReferenceWarnings []string
+			if rootFlags.ref == "" {
+				reference, remoteReferenceWarnings, err = local_repository.GetCurrentRemoteHead(cmd.Context(), gitRepository)
+				if err != nil {
+					return err
+				}
+			} else {
+				reference = rootFlags.ref
 			}
-			if !remoteReferenceWarningAnswer {
-				log.Error("Aborting.")
-				os.Exit(1)
+			if len(remoteReferenceWarnings) > 0 && !rootFlags.noPromptUnpushed {
+				antepenultimateIndex := len(remoteReferenceWarnings) - 2
+				if antepenultimateIndex < 0 {
+					antepenultimateIndex = 0
+				}
+				remoteReferenceWarningsString := strings.Join(append(remoteReferenceWarnings[:antepenultimateIndex], strings.Join(remoteReferenceWarnings[antepenultimateIndex:], " and ")), ", ")
+				remoteReferenceWarningQuestion := &survey.Confirm{
+					Message: fmt.Sprintf("You currently have %s. Would you still like to dispatch a workflow?", remoteReferenceWarningsString),
+				}
+
+				var remoteReferenceWarningAnswer bool
+				if err := survey.AskOne(remoteReferenceWarningQuestion, &remoteReferenceWarningAnswer); err != nil {
+					return errors.Wrap(err, "Unable to ask whether to continue despite warnings about the remote head.")
+				}
+				if !remoteReferenceWarningAnswer {
+					log.Error("Aborting.")
+					os.Exit(1)
+				}
+			}
+
+			locator := locator.LocalLocator{}
+			workflows, err = locator.ListWorkflows()
+			if err != nil {
+				return errors.Wrap(err, "Failed to list workflows in repository.")
+			}
+		} else {
+			fullRepository := rootFlags.repository
+			if rootFlags.hostname != "" {
+				fullRepository = fmt.Sprintf("%s/%s", rootFlags.hostname, fullRepository)
+			}
+			currentRepository, err = repository.Parse(fullRepository)
+			if err != nil {
+				return errors.Wrap(err, "Unable to parse repository.")
+			}
+			reference = rootFlags.ref
+			if reference == "" {
+				reference, err = default_ref.GetDefaultRef(currentRepository)
+				if err != nil {
+					return err
+				}
+			}
+			locator := locator.RemoteLocator{
+				Repository: currentRepository,
+				Ref:        reference,
+			}
+			workflows, err = locator.ListWorkflows()
+			if err != nil {
+				return errors.Wrap(err, "Failed to list workflows in repository.")
 			}
 		}
 
-		workflows, err := locator.ListWorkflowsInRepository()
-		if err != nil {
-			return errors.Wrap(err, "Failed to list workflows in repository.")
-		}
 		if len(workflows) == 0 {
 			log.Error("No dispatchable workflows found in repository.")
 			return SilentErr
@@ -205,19 +247,19 @@ var rootCmd = &cobra.Command{
 		}
 
 		log.Info("Dispatching workflow...")
-		err = dispatcher.DispatchWorkflow(currentRepository, remoteReference, workflowName, workflowInputs)
+		err = dispatcher.DispatchWorkflow(currentRepository, reference, workflowName, workflowInputs)
 		if err != nil {
 			return err
 		}
 
 		if !rootFlags.noWatch {
 			log.Info("Waiting for workflow to start...")
-			workflowRun, err := run.LocateRun(currentRepository, remoteReference)
+			workflowRun, err := run.LocateRun(currentRepository, reference)
 			if err != nil {
 				return err
 			}
 
-			command := exec.CommandContext(cmd.Context(), "gh", "run", "watch", strconv.FormatInt(workflowRun.ID, 10))
+			command := exec.CommandContext(cmd.Context(), "gh", "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host(), currentRepository.Owner(), currentRepository.Name()), strconv.FormatInt(workflowRun.ID, 10))
 			command.Stdout = os.Stdout
 			command.Stderr = os.Stderr
 			err = command.Run()
@@ -255,10 +297,22 @@ func Execute(ctx context.Context) error {
 	rootCmd.Flags().StringSliceVar(&rootFlags.inputs, "input", nil, "Inputs to pass to the workflow, as `key=value`.")
 	rootCmd.Flags().BoolVar(&rootFlags.noPromptInputs, "no-prompt-inputs", false, "Do not prompt for any inputs to the workflow.")
 	rootCmd.Flags().BoolVar(&rootFlags.noPromptUnpushed, "no-prompt-unpushed", false, "Do not warn about any uncommitted or unpushed changes.")
+	rootCmd.Flags().StringVar(&rootFlags.hostname, "hostname", "", "The hostname of the GitHub instance.")
+	rootCmd.Flags().StringVar(&rootFlags.repository, "repository", "", "The repository to dispatch the workflow on.")
+	rootCmd.Flags().StringVar(&rootFlags.ref, "ref", "", "The reference to dispatch the workflow on.")
 
 	err := rootFlags.Init(rootCmd)
 	if err != nil {
 		return err
+	}
+
+	if (rootFlags.hostname != "") && (rootFlags.repository == "") {
+		log.Error("If --hostname is specified then --repository must also be.")
+		return SilentErr
+	}
+
+	if (rootFlags.ref != "") && !strings.HasPrefix(rootFlags.ref, "refs/") {
+		rootFlags.ref = fmt.Sprintf("refs/heads/%s", rootFlags.ref)
 	}
 
 	return rootCmd.ExecuteContext(ctx)
