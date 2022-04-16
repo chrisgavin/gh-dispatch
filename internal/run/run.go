@@ -2,7 +2,6 @@ package run
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -17,8 +16,12 @@ type User struct {
 }
 
 type WorkflowRun struct {
-	ID         int64  `json:"id"`
-	Conclusion string `json:"conclusion"`
+	ID         int64     `json:"id"`
+	Conclusion string    `json:"conclusion"`
+	Actor      User      `json:"actor"`
+	Branch     string    `json:"head_branch"`
+	Event      string    `json:"event"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type WorkflowRuns struct {
@@ -31,19 +34,24 @@ func findRun(client api.RESTClient, repository repository.Repository, reference 
 		return nil, errors.Wrap(err, "Unable to get the current user.")
 	}
 
-	urlParameters := url.Values{}
-	urlParameters.Add("actor", user.Login)
-	urlParameters.Add("branch", strings.TrimPrefix(reference, "refs/heads/"))
-	urlParameters.Add("event", "workflow_dispatch")
-	createdRange := fmt.Sprintf("%s..%s", after.Format(time.RFC3339), before.Format(time.RFC3339))
-	urlParameters.Add("created", createdRange)
-
 	workflowRuns := WorkflowRuns{}
-	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/runs?%s", repository.Owner(), repository.Name(), urlParameters.Encode()), &workflowRuns); err != nil {
+	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/runs", repository.Owner(), repository.Name()), &workflowRuns); err != nil {
 		return nil, errors.Wrap(err, "Unable to get list of recent runs.")
 	}
 
 	for _, run := range workflowRuns.WorkflowRuns {
+		if !strings.EqualFold(run.Actor.Login, user.Login) {
+			continue
+		}
+		if run.Branch != strings.TrimPrefix(reference, "refs/heads/") {
+			continue
+		}
+		if run.Event != "workflow_dispatch" {
+			continue
+		}
+		if run.CreatedAt.Before(after) || run.CreatedAt.After(before) {
+			continue
+		}
 		return &run, nil
 	}
 	return nil, nil
