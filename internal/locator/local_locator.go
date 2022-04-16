@@ -12,7 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ListWorkflowsInRepository() (map[string]workflow.Workflow, error) {
+type LocalLocator struct{}
+
+func (LocalLocator) ListWorkflows() (map[string]workflow.Workflow, error) {
 	repositoryRoot, err := getRepositoryRoot()
 	if err != nil {
 		return nil, err
