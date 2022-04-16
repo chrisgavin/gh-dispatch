@@ -35,6 +35,18 @@ var rootFlags = rootFlagFields{}
 
 var SilentErr = errors.New("SilentErr")
 
+func defaultIfDefaultOption(defaultValue string, options []string) string {
+	for _, option := range options {
+		if option == defaultValue {
+			return defaultValue
+		}
+	}
+	if len(options) > 0 {
+		return options[0]
+	}
+	return ""
+}
+
 var rootCmd = &cobra.Command{
 	Use:           "gh dispatch <workflow>",
 	Short:         "A GitHub CLI extension that makes it easy to dispatch GitHub Actions workflows.",
@@ -154,7 +166,7 @@ var rootCmd = &cobra.Command{
 						Message: message,
 						Help:    input.Description,
 						Options: options,
-						Default: input.Default,
+						Default: defaultIfDefaultOption(input.Default, options),
 					}
 				} else if input.Type == workflow.EnvironmentInput {
 					if environmentCache == nil {
@@ -167,7 +179,7 @@ var rootCmd = &cobra.Command{
 						Message: message,
 						Help:    input.Description,
 						Options: environmentCache,
-						Default: input.Default,
+						Default: defaultIfDefaultOption(input.Default, environmentCache),
 					}
 				} else {
 					return errors.Errorf("Unhandled input type %s. This is a bug. :(", input.Type)
