@@ -20,6 +20,7 @@ import (
 	"github.com/chrisgavin/gh-dispatch/internal/workflow"
 	"github.com/cli/go-gh"
 	"github.com/cli/go-gh/pkg/repository"
+	"github.com/cli/safeexec"
 	"github.com/go-git/go-git/v5"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -259,7 +260,12 @@ var rootCmd = &cobra.Command{
 				return err
 			}
 
-			command := exec.CommandContext(cmd.Context(), "gh", "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host(), currentRepository.Owner(), currentRepository.Name()), strconv.FormatInt(workflowRun.ID, 10))
+			ghPath, err := safeexec.LookPath("gh")
+			if err != nil {
+				return errors.Wrap(err, "Unable to find gh.")
+			}
+
+			command := exec.CommandContext(cmd.Context(), ghPath, "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host(), currentRepository.Owner(), currentRepository.Name()), strconv.FormatInt(workflowRun.ID, 10))
 			command.Stdout = os.Stdout
 			command.Stderr = os.Stderr
 			err = command.Run()
