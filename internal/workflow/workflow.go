@@ -78,7 +78,9 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "Unable to parse workflow as typed YAML.")
 			}
-			if typedParsedWorkflow.On.WorkflowDispatch != nil {
+			if workflowDispatchTrigger, ok := typedOn[workflowDispatch]; ok && workflowDispatchTrigger == nil {
+				workflow.Dispatchable = true
+			} else if typedParsedWorkflow.On.WorkflowDispatch != nil {
 				workflow.Dispatchable = true
 				if typedParsedWorkflow.On.WorkflowDispatch.Inputs != nil {
 					for _, inputData := range *typedParsedWorkflow.On.WorkflowDispatch.Inputs {
