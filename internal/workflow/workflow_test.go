@@ -55,6 +55,18 @@ on:
 	require.Empty(t, workflowData.Inputs)
 }
 
+func TestReadDispatchableWorkflowConciseMapStyle(t *testing.T) {
+	const workflowContent = `
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+`
+	workflowData := parseTestWorkflow(t, workflowContent)
+	require.True(t, workflowData.Dispatchable)
+	require.Empty(t, workflowData.Inputs)
+}
+
 func TestReadWorkflowWithInputs(t *testing.T) {
 	const workflowContent = `
 on:
