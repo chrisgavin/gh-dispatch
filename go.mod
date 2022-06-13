@@ -3,7 +3,7 @@ module github.com/chrisgavin/gh-dispatch
 go 1.17
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.4
+	github.com/AlecAivazis/survey/v2 v2.3.5
 	github.com/cli/go-gh v0.0.3
 	github.com/cli/safeexec v1.0.0
 	github.com/go-git/go-git/v5 v5.4.2
@@ -39,7 +39,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
