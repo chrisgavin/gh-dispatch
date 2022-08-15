@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.5
-	github.com/cli/go-gh v0.0.3
+	github.com/cli/go-gh v0.1.0
 	github.com/cli/safeexec v1.0.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/pkg/errors v0.9.1
@@ -36,6 +36,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/thlib/go-timezone-local v0.0.0-20210907160436-ef149e42d28e // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
