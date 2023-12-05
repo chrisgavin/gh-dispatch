@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/cli/go-gh v0.1.2
+	github.com/cli/go-gh v1.2.1
 	github.com/cli/safeexec v1.0.1
 	github.com/go-git/go-git/v5 v5.10.1
 	github.com/pkg/errors v0.9.1
