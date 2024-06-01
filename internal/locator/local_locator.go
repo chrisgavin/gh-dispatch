@@ -1,7 +1,6 @@
 package locator
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,7 +19,7 @@ func (LocalLocator) ListWorkflows() (map[string]workflow.Workflow, error) {
 		return nil, err
 	}
 	workflowsDirectory := path.Join(repositoryRoot, workflow.WorkflowsPath)
-	entries, err := ioutil.ReadDir(workflowsDirectory)
+	entries, err := os.ReadDir(workflowsDirectory)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to list workflows in workflows directory.")
 	}
@@ -40,7 +39,7 @@ func (LocalLocator) ListWorkflows() (map[string]workflow.Workflow, error) {
 		if !isWorkflow {
 			continue
 		}
-		bytes, err := ioutil.ReadFile(path.Join(workflowsDirectory, entry.Name()))
+		bytes, err := os.ReadFile(path.Join(workflowsDirectory, entry.Name()))
 		if err != nil {
 			return nil, errors.Wrap(err, "Unable to read workflow file.")
 		}
