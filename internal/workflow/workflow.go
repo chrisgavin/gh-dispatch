@@ -132,9 +132,7 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 							}
 						}
 						if inputDefault, ok := mapInputConfiguration["default"]; ok {
-							if input.Default, ok = inputDefault.(string); !ok {
-								return nil, errors.Errorf("Input default for %s had unexpected type %T.", input.Name, inputDefault)
-							}
+							input.Default = fmt.Sprintf("%v", inputDefault)
 						}
 						workflow.Inputs = append(workflow.Inputs, input)
 					}
