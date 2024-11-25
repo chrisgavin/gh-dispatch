@@ -65,7 +65,7 @@ var rootCmd = &cobra.Command{
 		var currentRepository repository.Repository
 		var reference string
 		if rootFlags.repository == "" {
-			gitRepository, err := git.PlainOpen(".")
+			gitRepository, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{DetectDotGit: true})
 			if err != nil {
 				return errors.Wrap(err, "Unable to open git repository.")
 			}
