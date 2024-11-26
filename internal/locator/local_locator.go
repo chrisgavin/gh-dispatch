@@ -68,7 +68,6 @@ func getRepositoryRoot() (string, error) {
 			if !os.IsNotExist(err) {
 				return "", errors.Wrapf(err, "Unable to stat git directory \"%s\".", gitDirectory)
 			}
-			continue
 		} else {
 			if stat.IsDir() {
 				return path, nil
