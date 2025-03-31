@@ -191,19 +191,20 @@ var rootCmd = &cobra.Command{
 					Name: input.Name,
 				}
 				message := fmt.Sprintf("Input for %s:", input.Name)
-				if input.Type == workflow.StringInput {
+				switch input.Type {
+				case workflow.StringInput:
 					question.Prompt = &survey.Input{
 						Message: message,
 						Help:    input.Description,
 						Default: input.Default,
 					}
-				} else if input.Type == workflow.BooleanInput {
+				case workflow.BooleanInput:
 					question.Prompt = &survey.Confirm{
 						Message: message,
 						Help:    input.Description,
 						Default: input.Default == "true",
 					}
-				} else if input.Type == workflow.ChoiceInput {
+				case workflow.ChoiceInput:
 					options := input.OptionProvider()
 					question.Prompt = &survey.Select{
 						Message: message,
@@ -211,7 +212,7 @@ var rootCmd = &cobra.Command{
 						Options: options,
 						Default: defaultIfDefaultOption(input.Default, options),
 					}
-				} else if input.Type == workflow.EnvironmentInput {
+				case workflow.EnvironmentInput:
 					if environmentCache == nil {
 						environmentCache, err = environment.ListEnvironments(currentRepository)
 						if err != nil {
@@ -224,7 +225,7 @@ var rootCmd = &cobra.Command{
 						Options: environmentCache,
 						Default: defaultIfDefaultOption(input.Default, environmentCache),
 					}
-				} else {
+				default:
 					return errors.Errorf("Unhandled input type %s. This is a bug. :(", input.Type)
 				}
 				inputQuestions = append(inputQuestions, &question)
