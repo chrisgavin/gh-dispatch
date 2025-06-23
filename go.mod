@@ -10,7 +10,7 @@ require (
 	github.com/cli/safeexec v1.0.1
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/golangci/golangci-lint v1.64.8
-	github.com/hashicorp/go-retryablehttp v0.7.7
+	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
