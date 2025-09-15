@@ -157,7 +157,7 @@ require (
 	github.com/nakabonne/nestif v0.3.1 // indirect
 	github.com/nishanths/exhaustive v0.12.0 // indirect
 	github.com/nishanths/predeclared v0.2.2 // indirect
-	github.com/nunnatsa/ginkgolinter v0.20.0 // indirect
+	github.com/nunnatsa/ginkgolinter v0.21.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -224,7 +224,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20250620022241-b7579e27df2b // indirect
+	golang.org/x/exp/typeparams v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
