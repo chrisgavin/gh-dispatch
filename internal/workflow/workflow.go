@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type InputType string
@@ -41,7 +41,7 @@ type Workflow struct {
 const workflowDispatch = "workflow_dispatch"
 
 type workflowDispatchTrigger struct {
-	Inputs *yaml.MapSlice `yaml:"inputs"`
+	Inputs yaml.Node `yaml:"inputs"`
 }
 
 type workflowTriggers struct {
@@ -71,7 +71,7 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 					workflow.Dispatchable = true
 				}
 			}
-		case map[interface{}]interface{}:
+		case map[string]interface{}:
 			// We want to preserve the order of inputs, so in this case we re-parse the workflow using the internal types specifically meant for preserving order.
 			typedParsedWorkflow := workflowInternal{}
 			err = yaml.Unmarshal(rawWorkflow, &typedParsedWorkflow)
@@ -82,20 +82,35 @@ func ReadWorkflow(name string, rawWorkflow []byte) (*Workflow, error) {
 				workflow.Dispatchable = true
 			} else if typedParsedWorkflow.On.WorkflowDispatch != nil {
 				workflow.Dispatchable = true
-				if typedParsedWorkflow.On.WorkflowDispatch.Inputs != nil {
-					for _, inputData := range *typedParsedWorkflow.On.WorkflowDispatch.Inputs {
-						inputName := inputData.Key
-						inputConfiguration := inputData.Value
-						typedInputConfiguration, ok := inputConfiguration.(yaml.MapSlice)
-						if !ok {
-							return nil, errors.Errorf("Input configuration for %s had unexpected type %T.", inputName, inputConfiguration)
+				if typedParsedWorkflow.On.WorkflowDispatch.Inputs.Kind != 0 {
+					// In yaml.v3, inputs are stored as a Node with Kind = MappingNode.
+					// Content contains pairs of key-value nodes.
+					for i := 0; i < len(typedParsedWorkflow.On.WorkflowDispatch.Inputs.Content); i += 2 {
+						if i+1 >= len(typedParsedWorkflow.On.WorkflowDispatch.Inputs.Content) {
+							break
 						}
+						inputNameNode := typedParsedWorkflow.On.WorkflowDispatch.Inputs.Content[i]
+						inputConfigNode := typedParsedWorkflow.On.WorkflowDispatch.Inputs.Content[i+1]
+
+						inputName := inputNameNode.Value
+
 						mapInputConfiguration := map[interface{}]interface{}{}
-						for _, inputConfigurationData := range typedInputConfiguration {
-							mapInputConfiguration[inputConfigurationData.Key] = inputConfigurationData.Value
+						if inputConfigNode.Kind == yaml.MappingNode {
+							for j := 0; j < len(inputConfigNode.Content); j += 2 {
+								if j+1 >= len(inputConfigNode.Content) {
+									break
+								}
+								key := inputConfigNode.Content[j].Value
+								var value interface{}
+								err := inputConfigNode.Content[j+1].Decode(&value)
+								if err != nil {
+									return nil, errors.Wrapf(err, "Unable to decode value for key %s in input %s.", key, inputName)
+								}
+								mapInputConfiguration[key] = value
+							}
 						}
 						input := Input{
-							Name: inputName.(string),
+							Name: inputName,
 						}
 						if inputDescription, ok := mapInputConfiguration["description"]; ok {
 							input.Description, ok = inputDescription.(string)
