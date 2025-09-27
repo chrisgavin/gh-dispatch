@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/chrisgavin/gh-dispatch/internal/client"
-	"github.com/cli/go-gh/pkg/repository"
+	"github.com/cli/go-gh/v2/pkg/repository"
 	"github.com/pkg/errors"
 )
 
