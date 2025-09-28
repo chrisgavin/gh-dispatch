@@ -4,7 +4,7 @@ go 1.24.5
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/cli/go-gh v1.2.1
+	github.com/cli/go-gh/v2 v2.12.2
 	github.com/cli/safeexec v1.0.1
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/hashicorp/go-retryablehttp v0.7.8
@@ -60,7 +60,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
 	github.com/charmbracelet/colorprofile v0.3.2 // indirect
-	github.com/charmbracelet/lipgloss v1.1.0 // indirect
+	github.com/charmbracelet/lipgloss v1.1.1-0.20250319133953-166f707985bc // indirect
 	github.com/charmbracelet/x/ansi v0.10.1 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect

@@ -18,8 +18,7 @@ import (
 	"github.com/chrisgavin/gh-dispatch/internal/run"
 	"github.com/chrisgavin/gh-dispatch/internal/version"
 	"github.com/chrisgavin/gh-dispatch/internal/workflow"
-	"github.com/cli/go-gh"
-	"github.com/cli/go-gh/pkg/repository"
+	"github.com/cli/go-gh/v2/pkg/repository"
 	"github.com/cli/safeexec"
 	"github.com/go-git/go-git/v5"
 	"github.com/pkg/errors"
@@ -69,7 +68,7 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				return errors.Wrap(err, "Unable to open git repository.")
 			}
-			currentRepository, err = gh.CurrentRepository()
+			currentRepository, err = repository.Current()
 			if err != nil {
 				return errors.Wrap(err, "Unable to determine current repository. Has it got a remote on GitHub?")
 			}
@@ -266,7 +265,7 @@ var rootCmd = &cobra.Command{
 				return errors.Wrap(err, "Unable to find gh.")
 			}
 
-			command := exec.CommandContext(cmd.Context(), ghPath, "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host(), currentRepository.Owner(), currentRepository.Name()), strconv.FormatInt(workflowRun.ID, 10))
+			command := exec.CommandContext(cmd.Context(), ghPath, "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host, currentRepository.Owner, currentRepository.Name), strconv.FormatInt(workflowRun.ID, 10))
 			command.Stdout = os.Stdout
 			command.Stderr = os.Stderr
 			err = command.Run()
