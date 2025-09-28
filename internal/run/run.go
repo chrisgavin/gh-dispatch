@@ -28,14 +28,14 @@ type WorkflowRuns struct {
 	WorkflowRuns []WorkflowRun `json:"workflow_runs"`
 }
 
-func findRun(client api.RESTClient, repository repository.Repository, reference string, after time.Time, before time.Time) (*WorkflowRun, error) {
+func findRun(client *api.RESTClient, repository repository.Repository, reference string, after time.Time, before time.Time) (*WorkflowRun, error) {
 	user := User{}
 	if err := client.Get("user", &user); err != nil {
 		return nil, errors.Wrap(err, "Unable to get the current user.")
 	}
 
 	workflowRuns := WorkflowRuns{}
-	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/runs", repository.Owner(), repository.Name()), &workflowRuns); err != nil {
+	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/runs", repository.Owner, repository.Name), &workflowRuns); err != nil {
 		return nil, errors.Wrap(err, "Unable to get list of recent runs.")
 	}
 
@@ -58,7 +58,7 @@ func findRun(client api.RESTClient, repository repository.Repository, reference 
 }
 
 func LocateRun(repository repository.Repository, reference string) (*WorkflowRun, error) {
-	client, err := client.NewClient(repository.Host())
+	client, err := client.NewClient(repository.Host)
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +83,13 @@ func LocateRun(repository repository.Repository, reference string) (*WorkflowRun
 }
 
 func GetRun(repository repository.Repository, id int64) (*WorkflowRun, error) {
-	client, err := client.NewClient(repository.Host())
+	client, err := client.NewClient(repository.Host)
 	if err != nil {
 		return nil, err
 	}
 
 	workflowRun := WorkflowRun{}
-	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/runs/%d", repository.Owner(), repository.Name(), id), &workflowRun); err != nil {
+	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/runs/%d", repository.Owner, repository.Name, id), &workflowRun); err != nil {
 		return nil, errors.Wrap(err, "Unable to get workflow run.")
 	}
 	return &workflowRun, nil

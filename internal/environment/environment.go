@@ -19,14 +19,14 @@ type Environments struct {
 }
 
 func ListEnvironments(repository repository.Repository) ([]string, error) {
-	client, err := client.NewClient(repository.Host())
+	client, err := client.NewClient(repository.Host)
 	if err != nil {
 		return nil, err
 	}
 
 	environments := Environments{}
-	if err := client.Get(fmt.Sprintf("repos/%s/%s/environments", repository.Owner(), repository.Name()), &environments); err != nil {
-		if httpError, ok := err.(api.HTTPError); ok {
+	if err := client.Get(fmt.Sprintf("repos/%s/%s/environments", repository.Owner, repository.Name), &environments); err != nil {
+		if httpError, ok := err.(*api.HTTPError); ok {
 			if httpError.StatusCode == 404 {
 				log.Warn("Got a 404 when listing environments for the repository. Unfortunately the environments API is a limited to paid organization plans.")
 				return nil, nil

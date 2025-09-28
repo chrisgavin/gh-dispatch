@@ -37,13 +37,13 @@ type concurrentWorkflowResult struct {
 }
 
 func (locator RemoteLocator) ListWorkflows() (map[string]workflow.Workflow, error) {
-	client, err := client.NewClient(locator.Repository.Host())
+	client, err := client.NewClient(locator.Repository.Host)
 	if err != nil {
 		return nil, err
 	}
 
 	apiWorkflows := apiWorkflows{}
-	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/workflows?per_page=100", locator.Repository.Owner(), locator.Repository.Name()), &apiWorkflows); err != nil {
+	if err := client.Get(fmt.Sprintf("repos/%s/%s/actions/workflows?per_page=100", locator.Repository.Owner, locator.Repository.Name), &apiWorkflows); err != nil {
 		return nil, errors.Wrap(err, "Unable to list workflows.")
 	}
 
@@ -60,8 +60,8 @@ func (locator RemoteLocator) ListWorkflows() (map[string]workflow.Workflow, erro
 			if locator.Ref != "" {
 				urlParameters.Add("ref", locator.Ref)
 			}
-			if err := client.Get(fmt.Sprintf("repos/%s/%s/contents/%s?%s", locator.Repository.Owner(), locator.Repository.Name(), apiWorkflowValue.Path, urlParameters.Encode()), &apiFile); err != nil {
-				if httpError, ok := err.(api.HTTPError); ok && httpError.StatusCode == 404 {
+			if err := client.Get(fmt.Sprintf("repos/%s/%s/contents/%s?%s", locator.Repository.Owner, locator.Repository.Name, apiWorkflowValue.Path, urlParameters.Encode()), &apiFile); err != nil {
+				if httpError, ok := err.(*api.HTTPError); ok && httpError.StatusCode == 404 {
 					// This can happen when the workflow exists on the default branch but not on the ref we're dispatching against.
 					channel <- concurrentWorkflowResult{}
 					return
