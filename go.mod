@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/cli/go-gh/v2 v2.13.0
 	github.com/cli/safeexec v1.0.1
-	github.com/go-git/go-git/v5 v5.18.0
+	github.com/go-git/go-git/v5 v5.19.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.4
@@ -171,7 +171,7 @@ require (
 	github.com/nishanths/predeclared v0.2.2 // indirect
 	github.com/nunnatsa/ginkgolinter v0.23.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.1 // indirect
-	github.com/pjbgf/sha1cd v0.5.0 // indirect
+	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
