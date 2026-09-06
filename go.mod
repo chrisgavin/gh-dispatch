@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/cli/go-gh/v2 v2.15.0
+	github.com/cli/go-gh/v2 v2.16.0
 	github.com/cli/safeexec v1.0.1
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/hashicorp/go-retryablehttp v0.7.8
