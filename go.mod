@@ -1,10 +1,10 @@
 module github.com/chrisgavin/gh-dispatch
 
-go 1.26.0
+go 1.26.7
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/cli/go-gh/v2 v2.16.2
+	github.com/cli/go-gh/v2 v2.17.0
 	github.com/cli/safeexec v1.0.1
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/hashicorp/go-retryablehttp v0.7.8
@@ -206,7 +206,7 @@ require (
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tetafro/godot v1.5.6 // indirect
-	github.com/thlib/go-timezone-local v0.0.8 // indirect
+	github.com/thlib/go-timezone-local v0.0.9 // indirect
 	github.com/timakin/bodyclose v0.0.0-20260723120731-857993a2939c // indirect
 	github.com/timonwong/loggercheck v0.13.0 // indirect
 	github.com/tomarrell/wrapcheck/v2 v2.13.0 // indirect
