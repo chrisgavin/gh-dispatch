@@ -121,8 +121,8 @@ github.com/charmbracelet/x/windows v0.2.2 h1:IofanmuvaxnKHuV04sC0eBy/smG6kIKrWG2
 github.com/charmbracelet/x/windows v0.2.2/go.mod h1:/8XtdKZzedat74NQFn0NGlGL4soHB0YQZrETF96h75k=
 github.com/ckaznocha/intrange v0.3.1 h1:j1onQyXvHUsPWujDH6WIjhyH26gkRt/txNlV7LspvJs=
 github.com/ckaznocha/intrange v0.3.1/go.mod h1:QVepyz1AkUoFQkpEqksSYpNpUo3c5W7nWh/s6SHIJJk=
-github.com/cli/go-gh/v2 v2.16.2 h1:Qsb8GsS4QQWjupxcMutrj5tl2cJs6HubyDM0xQ4qsII=
-github.com/cli/go-gh/v2 v2.16.2/go.mod h1:OaJTFtHJapQq670h/3L0vqm4NwZGoJmSAVctWiY+3pQ=
+github.com/cli/go-gh/v2 v2.17.0 h1:F24s1Ow/6pgWO0FXXSTi7l4YLkcuS94XPv7npEGkrQc=
+github.com/cli/go-gh/v2 v2.17.0/go.mod h1:bc2VCe0OUSOuhDz5HeQrA7RAtc/d3PtyGogBXHbcp1o=
 github.com/cli/safeexec v1.0.1 h1:e/C79PbXF4yYTN/wauC4tviMxEV13BwljGj0N9j+N00=
 github.com/cli/safeexec v1.0.1/go.mod h1:Z/D4tTN8Vs5gXYHDCbaM1S/anmEDnJb1iW0+EJ5zx3Q=
 github.com/cli/shurcooL-graphql v0.0.4 h1:6MogPnQJLjKkaXPyGqPRXOI2qCsQdqNfUY1QSJu2GuY=
@@ -492,8 +492,8 @@ github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3 h1:f+jULpR
 github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3/go.mod h1:ON8b8w4BN/kE1EOhwT0o+d62W65a6aPw1nouo9LMgyY=
 github.com/tetafro/godot v1.5.6 h1:IEkrFCwXaYHlOn4mGzGS3F3dkP6m9t0jpwqBFPIkKiA=
 github.com/tetafro/godot v1.5.6/go.mod h1:eOkMrVQurDui411nBY2FA05EYH01r14LuWY/NrVDVcU=
-github.com/thlib/go-timezone-local v0.0.8 h1:wPh1JtBHBqAKmYjHD4j6GbQMGGbOOOnB6YRMQUTzYAY=
-github.com/thlib/go-timezone-local v0.0.8/go.mod h1:/Tnicc6m/lsJE0irFMA0LfIwTBo4QP7A8IfyIv4zZKI=
+github.com/thlib/go-timezone-local v0.0.9 h1:NJAmMmgFfjcyyx+M5EU4sSU35opbw4sVpk5n4Qk/bGk=
+github.com/thlib/go-timezone-local v0.0.9/go.mod h1:/Tnicc6m/lsJE0irFMA0LfIwTBo4QP7A8IfyIv4zZKI=
 github.com/timakin/bodyclose v0.0.0-20260723120731-857993a2939c h1:d/FUP8GD4QiY/rdFzZmBu3KqL9eBNVzMu7W/5pGkaMM=
 github.com/timakin/bodyclose v0.0.0-20260723120731-857993a2939c/go.mod h1:sDHLK7rb/59v/ZxZ7KtymgcoxuUMxjXq8gtu9VMOK8M=
 github.com/timonwong/loggercheck v0.13.0 h1:6amIOmLLPFYt24rXUbNWzcJeNGuJc+3c31tZtO85VHs=
