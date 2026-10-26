@@ -10,25 +10,35 @@ import (
 	"github.com/pkg/errors"
 )
 
-func DispatchWorkflow(repository repository.Repository, reference string, workflowName string, inputs map[string]string) error {
+type DispatchedRun struct {
+	ID      int64  `json:"workflow_run_id"`
+	HTMLURL string `json:"html_url"`
+}
+
+func DispatchWorkflow(repository repository.Repository, reference string, workflowName string, inputs map[string]string) (*DispatchedRun, error) {
 	client, err := client.NewClient(repository.Host)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	body := map[string]interface{}{
-		"ref":    reference,
-		"inputs": inputs,
+		"ref":                reference,
+		"inputs":             inputs,
+		"return_run_details": true,
 	}
 	encodedBody, err := json.Marshal(body)
 	if err != nil {
-		return errors.Wrap(err, "Unable to marshal workflow dispatch body.")
+		return nil, errors.Wrap(err, "Unable to marshal workflow dispatch body.")
 	}
 
-	err = client.Post(fmt.Sprintf("repos/%s/%s/actions/workflows/%s/dispatches", repository.Owner, repository.Name, workflowName), bytes.NewReader(encodedBody), nil)
+	dispatchedRun := DispatchedRun{}
+	err = client.Post(fmt.Sprintf("repos/%s/%s/actions/workflows/%s/dispatches", repository.Owner, repository.Name, workflowName), bytes.NewReader(encodedBody), &dispatchedRun)
 	if err != nil {
-		return errors.Wrap(err, "Unable to dispatch workflow.")
+		return nil, errors.Wrap(err, "Unable to dispatch workflow.")
+	}
+	if dispatchedRun.ID == 0 {
+		return nil, errors.New("Workflow dispatch did not return a run ID.")
 	}
 
-	return nil
+	return &dispatchedRun, nil
 }
