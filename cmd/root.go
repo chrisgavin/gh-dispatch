@@ -248,24 +248,19 @@ var rootCmd = &cobra.Command{
 		}
 
 		log.Info("Dispatching workflow...")
-		err = dispatcher.DispatchWorkflow(currentRepository, reference, workflowName, workflowInputs)
+		dispatchedRun, err := dispatcher.DispatchWorkflow(currentRepository, reference, workflowName, workflowInputs)
 		if err != nil {
 			return err
 		}
+		log.Infof("Workflow run started at %s.", dispatchedRun.HTMLURL)
 
 		if !rootFlags.noWatch {
-			log.Info("Waiting for workflow to start...")
-			workflowRun, err := run.LocateRun(currentRepository, reference)
-			if err != nil {
-				return err
-			}
-
 			ghPath, err := safeexec.LookPath("gh")
 			if err != nil {
 				return errors.Wrap(err, "Unable to find gh.")
 			}
 
-			command := exec.CommandContext(cmd.Context(), ghPath, "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host, currentRepository.Owner, currentRepository.Name), strconv.FormatInt(workflowRun.ID, 10))
+			command := exec.CommandContext(cmd.Context(), ghPath, "run", "watch", "--repo", fmt.Sprintf("%s/%s/%s", currentRepository.Host, currentRepository.Owner, currentRepository.Name), strconv.FormatInt(dispatchedRun.ID, 10))
 			command.Stdout = os.Stdout
 			command.Stderr = os.Stderr
 			err = command.Run()
@@ -273,7 +268,7 @@ var rootCmd = &cobra.Command{
 				return errors.Wrap(err, "Unable to watch workflow progress.")
 			}
 
-			workflowRun, err = run.GetRun(currentRepository, workflowRun.ID)
+			workflowRun, err := run.GetRun(currentRepository, dispatchedRun.ID)
 			if err != nil {
 				return err
 			}
